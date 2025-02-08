@@ -51,10 +51,6 @@ const BreadCrumbs = ({ menus }: Props) => {
     });
   
   }, [pathname]);
-
-  useEffect(() => {
-    console.log(hierarchy)
-  },[hierarchy])
   
   return (
     <nav className="px-4 pb-4 text-sm">

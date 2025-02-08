@@ -17,7 +17,7 @@ export async function Navbar() {
     <nav className="relative flex items-center justify-between p-4 lg:px-6">
       <div className="block flex-none md:hidden">
         <Suspense fallback={null}>
-          <MobileMenu menu={menu} />
+          <MobileMenu menu={menu} collections={collections} />
         </Suspense>
       </div>
       <div className="flex w-full items-center">

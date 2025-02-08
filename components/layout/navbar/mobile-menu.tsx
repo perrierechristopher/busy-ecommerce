@@ -3,18 +3,29 @@
 import { Dialog, Transition } from '@headlessui/react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Fragment, Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Menu } from 'lib/shopify/types';
+import { Collection, Menu } from 'lib/shopify/types';
 import Search, { SearchSkeleton } from './search';
+import { MenuX } from 'lib/types';
+import { HierarchicalSchema } from './schema';
 
-export default function MobileMenu({ menu }: { menu: Menu[] }) {
+export default function MobileMenu({ menu, collections }: { menu: Menu[], collections: Collection[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const openMobileMenu = () => setIsOpen(true);
   const closeMobileMenu = () => setIsOpen(false);
+
+    const newMenu: MenuX[] = useMemo(() => {
+      return menu.map((m) => ({
+        ...m,
+        children: m.title.match(/collections/i)
+          ? collections.map((c) => ({ title: c.title, path: c.path }))
+          : undefined
+      }));
+    }, [menu, collections]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -76,20 +87,7 @@ export default function MobileMenu({ menu }: { menu: Menu[] }) {
                     <Search />
                   </Suspense>
                 </div>
-                {menu.length ? (
-                  <ul className="flex w-full flex-col">
-                    {menu.map((item: Menu) => (
-                      <li
-                        className="py-2 text-xl text-black transition-colors hover:text-neutral-500 dark:text-white"
-                        key={item.title}
-                      >
-                        <Link href={item.path} prefetch={true} onClick={closeMobileMenu}>
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+                <HierarchicalSchema menu={newMenu} view='mobile' closeMenu={closeMobileMenu} />
               </div>
             </Dialog.Panel>
           </Transition.Child>
