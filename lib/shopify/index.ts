@@ -49,6 +49,7 @@ import {
   ShopifyRemoveFromCartOperation,
   ShopifyUpdateCartOperation
 } from './types';
+import { getMenusQuery } from './queries/menus';
 
 const domain = process.env.SHOPIFY_STORE_DOMAIN
   ? ensureStartsWith(process.env.SHOPIFY_STORE_DOMAIN, 'https://')
@@ -338,6 +339,14 @@ export async function getCollections(): Promise<Collection[]> {
   ];
 
   return collections;
+}
+
+export async function getMenus(): Promise<any> {
+  const res = await shopifyFetch<any>({
+    query: getMenusQuery,
+  })
+
+  return res.body?.data?.menus
 }
 
 export async function getMenu(handle: string): Promise<Menu[]> {

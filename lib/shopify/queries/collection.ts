@@ -6,6 +6,12 @@ const collectionFragment = /* GraphQL */ `
     handle
     title
     description
+    image {
+      url
+      altText
+      width
+      height
+    }
     seo {
       ...seo
     }
@@ -23,7 +29,7 @@ export const getCollectionQuery = /* GraphQL */ `
   ${collectionFragment}
 `;
 
-export const getCollectionsQuery = /* GraphQL */ `
+export const  getCollectionsQuery = /* GraphQL */ `
   query getCollections {
     collections(first: 100, sortKey: TITLE) {
       edges {

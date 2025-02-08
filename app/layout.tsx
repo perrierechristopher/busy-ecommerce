@@ -3,12 +3,13 @@ import { Navbar } from 'components/layout/navbar';
 import { WelcomeToast } from 'components/welcome-toast';
 import BreadCrumbs from 'components/layout/breadcrumb';
 import { GeistSans } from 'geist/font/sans';
-import { getCart } from 'lib/shopify';
+import { getCart, getCollections, getMenu } from 'lib/shopify';
 import { ensureStartsWith } from 'lib/utils';
 import { cookies } from 'next/headers';
 import { ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
+import { MenuX, Path } from 'lib/types';
 
 const { TWITTER_CREATOR, TWITTER_SITE, SITE_NAME } = process.env;
 const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
@@ -37,10 +38,23 @@ export const metadata = {
     })
 };
 
+const menus: MenuX[] = [{title: "Home", path: "/"}];
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const cartId = (await cookies()).get('cartId')?.value;
   // Don't await the fetch, pass the Promise to the context provider
   const cart = getCart(cartId);
+
+  await Promise.all([
+    getMenu('next-js-frontend-header-menu'),
+    getMenu('next-js-frontend-footer-menu'),
+    getCollections()
+  ]).then(values =>{
+    menus.push(...values[0])
+    menus.push(...values[1])
+    menus.push(...(values[2].map(v=>({title: v?.title, path: v?.path}))))
+    
+  })
 
   return (
     <html lang="en" className={GeistSans.variable}>
@@ -48,7 +62,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <CartProvider cartPromise={cart}>
           <Navbar />
           <main>
-          <BreadCrumbs/>
+          <BreadCrumbs menus={Array.from(new Set(menus))}/>
             {children}
             <Toaster closeButton />
             <WelcomeToast />
