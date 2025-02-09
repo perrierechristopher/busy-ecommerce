@@ -28,8 +28,8 @@ const CategoriesGridItem = ({ data, size }: { data: Collection, size?: 'full' | 
           label={{
             position:'bottom',
             title: title as string,
-            amount: '0',
-            currencyCode: 'EUR'
+            amount: '',
+            currencyCode: ''
           }}
         />
       </Link>
