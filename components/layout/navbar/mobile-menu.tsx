@@ -6,26 +6,41 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Fragment, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Collection, Menu } from 'lib/shopify/types';
+import { Collection, Menu, Product } from 'lib/shopify/types';
 import Search, { SearchSkeleton } from './search';
-import { MenuX } from 'lib/types';
+import { MenuX, ProductCustom } from 'lib/types';
 import { HierarchicalSchema } from './schema';
 
-export default function MobileMenu({ menu, collections }: { menu: Menu[], collections: Collection[] }) {
+export default function MobileMenu({
+  menu,
+  collections,
+  products
+}: {
+  menu: Menu[];
+  collections: Collection[];
+  products: ProductCustom[];
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const openMobileMenu = () => setIsOpen(true);
   const closeMobileMenu = () => setIsOpen(false);
 
-    const newMenu: MenuX[] = useMemo(() => {
-      return menu.map((m) => ({
-        ...m,
-        children: m.title.match(/collections/i)
-          ? collections.map((c) => ({ title: c.title, path: c.path }))
-          : undefined
-      }));
-    }, [menu, collections]);
+  const newMenu: any[] = useMemo(() => {
+    return menu.map((m) => ({
+      ...m,
+      children: m.title.match(/collections/i)
+        ? collections.map((c) => {
+            let productsForCollection = products.find((p) => p.collection===c.title)
+            return {
+              title: c.title,
+              path: c.path,
+              children: productsForCollection ? productsForCollection['products'].map((p: Product)=>({title: p.title, path: `/product/${p.handle}`})) : undefined
+            }
+          })
+        : undefined
+    }));
+  }, [menu, collections]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -87,7 +102,7 @@ export default function MobileMenu({ menu, collections }: { menu: Menu[], collec
                     <Search />
                   </Suspense>
                 </div>
-                <HierarchicalSchema menu={newMenu} view='mobile' closeMenu={closeMobileMenu} />
+                <HierarchicalSchema menu={newMenu} view="mobile" closeMenu={closeMobileMenu} />
               </div>
             </Dialog.Panel>
           </Transition.Child>

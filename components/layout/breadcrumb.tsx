@@ -1,17 +1,8 @@
 'use client';
-import { Collection } from 'lib/shopify/types';
 import { MenuX, Path } from 'lib/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { title } from 'process';
-import React, { useEffect } from 'react';
-
-/**
- * Menus will be hardcoded, we will write a query to fetch them and create
- * an object holding them that the breadcrumbs component will use to
- * define the segment
- *
- */
+import React, { useEffect, useState } from 'react';
 
 type Props = {
   menus: MenuX[];
@@ -21,69 +12,72 @@ const BreadCrumbs = ({ menus }: Props) => {
   const pathname = usePathname();
   const pathSegments = pathname.split('/').filter(Boolean);
 
-  const [hierarchy, setHierarchy] = React.useState<any>([{title: "Home", path: "/"}]);
+  // Load hierarchy from localStorage or default to home
+  const [hierarchy, setHierarchy] = useState<MenuX[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedHierarchy = localStorage.getItem('breadcrumbsHierarchy');
+      return savedHierarchy ? JSON.parse(savedHierarchy) : [{ title: 'Home', path: '/' }];
+    }
+    return [{ title: 'Home', path: '/' }];
+  });
 
   useEffect(() => {
-    setHierarchy((state: any) => {
-      let newHierarchy = new Set(state);
-  
-      const currentMenu = menus.find((m) => m.path === pathname) as Path;
+    setHierarchy((state) => {
+      let newHierarchy = [...state];
 
-      if (JSON.stringify(currentMenu) === JSON.stringify({title: "Home", path: "/"})) {
-        return [{title: "Home", path: "/"}];
+      // Find current menu item
+      const currentMenu = menus.find((m) => m.path === pathname) as MenuX;
+
+      // Reset hierarchy if Home
+      if (pathname === '/') {
+        return [{ title: 'Home', path: '/' }];
       }
-      if(currentMenu && !newHierarchy.has(currentMenu)) {
-      // Add menus from path segments if they are not already included
-      pathSegments.forEach((path) => {
-        const foundMenu = menus.find((m) => m.path === `/${path}`);
-        if (foundMenu && !newHierarchy.has(foundMenu)) {
-          newHierarchy.add(foundMenu as MenuX);
+
+      if (newHierarchy.indexOf(currentMenu) !== -1) {
+        return newHierarchy.slice(0, newHierarchy.indexOf(currentMenu)+1);
+      }
+
+      if (currentMenu) {
+        // Ensure each menu item in the hierarchy is unique
+        const updatedHierarchy = [...newHierarchy];
+
+        pathSegments.forEach((segment, i) => {
+          // const fullPath = '/' + pathSegments.slice(0, i + 1).join('/');
+          const foundMenu = menus.find((m) => m.path === `/${segment}`);
+
+          if (foundMenu && !updatedHierarchy.some((h) => h.path === foundMenu.path)) {
+            updatedHierarchy.push(foundMenu);
+          }
+        });
+
+        // Add current page if not already in the hierarchy
+        if (!updatedHierarchy.some((h) => h.path === currentMenu.path)) {
+          updatedHierarchy.push(currentMenu);
         }
-      });
-        newHierarchy.add(currentMenu);
-      } else if(currentMenu && newHierarchy.has(currentMenu)) {
-        newHierarchy = new Set(Array.from(newHierarchy).slice(0,Array.from(newHierarchy).indexOf(currentMenu)+1))
-      } else {
-        newHierarchy.add({title: pathSegments[pathSegments.length-1], path: pathname})
+
+        // Save to localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('breadcrumbsHierarchy', JSON.stringify(updatedHierarchy));
+        }
+
+        return updatedHierarchy;
       }
-  
-      return Array.from(new Set(newHierarchy));
+
+      return newHierarchy;
     });
-  
   }, [pathname]);
-  
+
   return (
     <nav className="px-4 pb-4 text-sm">
       <ol className="flex space-x-2">
-        {/* <li>
-          <Link href="/" className="text-lg text-white">
-            Home
-          </Link>
-        </li>
-        {pathSegments.map((segment, index) => {
-          const href = '/' + pathSegments.slice(0, index + 1).join('/');
-          return (
-            <li key={href} className="flex items-center space-x-2">
-              <span className="text-lg">{'>'}</span>
-              <Link href={href} className="text-lg capitalize text-white">
-                {segment}
-              </Link>
-            </li>
-          );
-        })} */}
-        {
-          hierarchy.map((h: Path, index: number)=>{
-            const href = hierarchy[index].path;
-            return (
-              <li key={href} className="flex items-center space-x-2">
-                {index > 0 && <span className="text-lg">{'>'}</span> }
-                <Link href={href} className="text-lg capitalize text-white">
-                  {h.title}
-                </Link>
-              </li>
-            )
-          })
-        }
+        {hierarchy.map((h: Path, index: number) => (
+          <li key={h.path} className="flex items-center space-x-2">
+            {index > 0 && <span className="text-lg">{'>'}</span>}
+            <Link href={h.path || '/'} className="text-lg capitalize text-white">
+              {h.title}
+            </Link>
+          </li>
+        ))}
       </ol>
     </nav>
   );

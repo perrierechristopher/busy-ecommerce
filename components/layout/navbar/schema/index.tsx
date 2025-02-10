@@ -17,7 +17,7 @@ export const HierarchicalSchema = ({
   view,
   closeMenu
 }: {
-  menu: MenuX[];
+  menu: MenuX[] | [] ;
   title?: string;
   view?: string;
   closeMenu?: any;
@@ -32,27 +32,35 @@ export const HierarchicalSchema = ({
             <ul className="flex w-full flex-col">
               {menu.map((item: MenuX) => (
                 <li
-                  className="relative flex items-center py-2 text-xl text-black dark:text-white"
-                  key={item.title}
+                  className="relative flex flex-col py-2 text-xl text-black dark:text-white"
+                  key={item.path}
                 >
-                  <Link
-                    className="transition-colors hover:text-neutral-500"
-                    href={item.path}
-                    prefetch={true}
-                    onClick={closeMenu}
-                  >
-                    {item.title}
-                  </Link>
-                  {item?.children && (
-                    <ChevronDownIcon
-                      className="ml-3 h-4 cursor-pointer transition-colors hover:text-neutral-500"
-                      onClick={() => setChildrenMenu(item.title)}
-                    />
-                  )}
+                  <div className="flex items-center">
+                    <Link
+                      className="transition-colors hover:text-neutral-500"
+                      href={item.path}
+                      prefetch={true}
+                      onClick={closeMenu}
+                    >
+                      {item.title}
+                    </Link>
+                    {Array.from(item?.children || []).length > 0 && (
+                      <ChevronDownIcon
+                        className='ml-3 h-4 my-auto cursor-pointer transition-colors hover:text-neutral-500'
+                        onClick={() =>
+                          setChildrenMenu(item.title)
+                        }
+                      />
+                    )}
+                  </div>
 
-                  {childrenMenu === item.title && !!item.children ? (
-                    <div className="absolute top-full ml-10">
-                      <HierarchicalSchema menu={item.children} view='mobile' closeMenu={closeMenu} />
+                  {childrenMenu===item.title && item?.children ? (
+                    <div className="ml-10">
+                      <HierarchicalSchema
+                        menu={item.children as MenuX[]}
+                        view="mobile"
+                        closeMenu={closeMenu}
+                      />
                     </div>
                   ) : (
                     <></>
@@ -101,7 +109,7 @@ const CustomMenuSchema = ({ menu, schema, collections }: Props) => {
       ...m,
       children: m.title.match(/collections/i)
         ? collections.map((c) => ({ title: c.title, path: c.path }))
-        : undefined
+        : []
     }));
   }, [menu, collections]);
 
